@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,11 +28,11 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body
-        className="min-h-full container py-8 mx-auto"
-        suppressHydrationWarning
-      >
-        {children}
+      <body className="min-h-full" suppressHydrationWarning>
+        <div className="container py-8 mx-auto">
+          <Toaster />
+          {children}
+        </div>
       </body>
     </html>
   );
