@@ -8,10 +8,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import supabase from "@/utils/supabase/db";
+import createSupabaseClient from "@/utils/supabase/db";
 import Image from "next/image";
 
 export default async function Page() {
+  const supabase = await createSupabaseClient();
   const { data: menus } = await supabase.from("menus").select();
 
   return (

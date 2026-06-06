@@ -8,9 +8,10 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import supabase from "@/utils/supabase/db";
+import createSupabaseClient from "@/utils/supabase/db";
 
 export default async function Page() {
+  const supabase = await createSupabaseClient();
   const { data: menus } = await supabase.from("menus").select();
   return (
     <>
