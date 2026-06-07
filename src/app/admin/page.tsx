@@ -46,10 +46,22 @@ import {
 import { useEffect, useState, type SubmitEvent } from "react";
 import { IMenu } from "@/types/IMenu";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Page() {
   const [menus, setMenus] = useState<IMenu[]>([]);
-  const [open, setOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [menuToDelete, setMenuToDelete] = useState<IMenu | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -73,8 +85,24 @@ export default function Page() {
       .select();
     if (!error) {
       setMenus([...menus, ...data]);
-      setOpen(false);
+      setCreateDialogOpen(false);
       toast("Menu added successfully");
+    }
+  }
+
+  async function handleDelete() {
+    if (!menuToDelete) return;
+
+    const { error } = await supabase
+      .from("menus")
+      .delete()
+      .eq("id", menuToDelete.id);
+
+    if (!error) {
+      setMenus(menus.filter((menu) => menu.id !== menuToDelete.id));
+      setDeleteDialogOpen(false);
+      setMenuToDelete(null);
+      toast("Menu deleted successfully");
     }
   }
 
@@ -82,7 +110,7 @@ export default function Page() {
     <>
       <div className="flex justify-between">
         <h1 className="text-3xl font-bold mb-16">Menu</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button type="button">Add Menu</Button>
           </DialogTrigger>
@@ -138,25 +166,41 @@ export default function Page() {
             </form>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the
+                menu <strong>{menuToDelete?.name}</strong> from our servers.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       <section>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="font-bold text-center">Menu</TableHead>
-              <TableHead className="font-bold text-center">
-                Description
-              </TableHead>
-              <TableHead className="font-bold text-center">Category</TableHead>
-              <TableHead className="font-bold text-center">Price</TableHead>
-              <TableHead className="font-bold text-center"></TableHead>
+              <TableHead className="font-bold">Menu</TableHead>
+              <TableHead className="font-bold">Description</TableHead>
+              <TableHead className="font-bold">Category</TableHead>
+              <TableHead className="font-bold">Price</TableHead>
+              <TableHead className="font-bold"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {menus?.map((menu) => (
               <TableRow key={menu.id}>
                 <TableCell className="font-medium">
-                  <div className="flex gap-2 items-center justify-center text-center">
+                  <div className="flex gap-2 items-center flex-wrap">
                     <Image
                       src={menu.image}
                       alt={menu.name}
@@ -167,14 +211,14 @@ export default function Page() {
                     {menu.name}
                   </div>
                 </TableCell>
-                <TableCell title={menu.description} className="text-center">
+                <TableCell title={menu.description} className="text-nowrap">
                   {menu.description.length > 100
                     ? menu.description.substring(0, 100) + "..."
                     : menu.description}
                 </TableCell>
-                <TableCell className="text-center">{menu.category}</TableCell>
-                <TableCell className="text-center">${menu.price}</TableCell>
-                <TableCell className="text-center">
+                <TableCell>{menu.category}</TableCell>
+                <TableCell>${menu.price}</TableCell>
+                <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon">
@@ -186,7 +230,13 @@ export default function Page() {
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem>Edit</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => {
+                            setMenuToDelete(menu);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuGroup>
